@@ -1,6 +1,14 @@
 import { Request, Response } from "express";
 import { refundService } from "../../services/refund.service";
 
+function buildAttachmentsFromFiles(files: Express.Multer.File[]) {
+  return files.map((file) => ({
+    nomeArquivo: file.originalname,
+    urlArquivo: `/uploads/${file.filename}`,
+    tipoArquivo: file.mimetype || "application/octet-stream"
+  }));
+}
+
 export const refundsController = {
   async list(req: Request, res: Response) {
     const result = await refundService.list(req.user, req.query as {
@@ -19,15 +27,21 @@ export const refundsController = {
   },
 
   async create(req: Request, res: Response) {
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    const anexos = files.length ? buildAttachmentsFromFiles(files) : req.body.anexos;
     const refund = await refundService.create({
       solicitanteId: req.user!.id,
-      ...req.body
+      ...req.body,
+      ...(anexos ? { anexos } : {})
     });
     return res.status(201).json(refund);
   },
 
   async update(req: Request, res: Response) {
-    const refund = await refundService.update(req.params.id, req.user, req.body);
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    const anexos = files.length ? buildAttachmentsFromFiles(files) : undefined;
+    const payload = anexos ? { ...req.body, anexos } : req.body;
+    const refund = await refundService.update(req.params.id, req.user, payload);
     return res.json(refund);
   },
 

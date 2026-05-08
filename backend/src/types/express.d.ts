@@ -9,6 +9,7 @@ declare global {
         nome: string;
         perfil: UserRole;
       };
+      files?: Express.Multer.File[];
     }
   }
 }

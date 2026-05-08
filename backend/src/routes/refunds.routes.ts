@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { authorizeRoles } from "../middlewares/rbac.middleware";
+import { upload } from "../middlewares/upload.middleware";
 import { validate } from "../middlewares/validate.middleware";
 import { refundsController } from "../modules/refunds/refunds.controller";
 import { historyController } from "../modules/refunds/history.controller";
@@ -26,8 +27,20 @@ router.use(authMiddleware);
 router.get("/", validate(refundQuerySchema), refundsController.list);
 router.delete("/purge", authorizeRoles(UserRole.ADMIN), validate(refundPurgeSchema), refundsController.purge);
 router.get("/:id", validate(refundParamsSchema), refundsController.getById);
-router.post("/", authorizeRoles(UserRole.COLABORADOR), validate(refundCreateSchema), refundsController.create);
-router.put("/:id", authorizeRoles(UserRole.COLABORADOR), validate(refundUpdateSchema), refundsController.update);
+router.post(
+  "/",
+  authorizeRoles(UserRole.COLABORADOR),
+  upload.array("anexos"),
+  validate(refundCreateSchema),
+  refundsController.create
+);
+router.put(
+  "/:id",
+  authorizeRoles(UserRole.COLABORADOR),
+  upload.array("anexos"),
+  validate(refundUpdateSchema),
+  refundsController.update
+);
 router.delete("/:id", authorizeRoles(UserRole.COLABORADOR), validate(refundParamsSchema), refundsController.remove);
 
 router.patch("/:id/send", authorizeRoles(UserRole.COLABORADOR), validate(refundSendSchema), refundsController.send);

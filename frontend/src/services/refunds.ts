@@ -27,24 +27,45 @@ export async function getRefund(id: string) {
   return response.data;
 }
 
-export async function createRefund(payload: {
+type RefundPayload = {
   categoriaId: string;
   descricao: string;
   valor: number;
   dataDespesa: string;
   anexos?: { nomeArquivo: string; urlArquivo: string; tipoArquivo: string }[];
-}) {
+};
+
+type RefundUpdatePayload = Partial<RefundPayload>;
+
+function appendRefundFormData(formData: FormData, payload: RefundPayload | RefundUpdatePayload) {
+  if (payload.categoriaId) formData.append("categoriaId", payload.categoriaId);
+  if (payload.descricao) formData.append("descricao", payload.descricao);
+  if (payload.valor !== undefined) formData.append("valor", String(payload.valor));
+  if (payload.dataDespesa) formData.append("dataDespesa", payload.dataDespesa);
+}
+
+export async function createRefund(payload: RefundPayload, files?: File[]) {
+  if (files?.length) {
+    const formData = new FormData();
+    appendRefundFormData(formData, payload);
+    files.forEach((file) => formData.append("anexos", file));
+    const response = await api.post<Refund>("/refunds", formData);
+    return response.data;
+  }
+
   const response = await api.post<Refund>("/refunds", payload);
   return response.data;
 }
 
-export async function updateRefund(id: string, payload: Partial<{
-  categoriaId: string;
-  descricao: string;
-  valor: number;
-  dataDespesa: string;
-  anexos?: { nomeArquivo: string; urlArquivo: string; tipoArquivo: string }[];
-}>) {
+export async function updateRefund(id: string, payload: RefundUpdatePayload, files?: File[]) {
+  if (files?.length) {
+    const formData = new FormData();
+    appendRefundFormData(formData, payload);
+    files.forEach((file) => formData.append("anexos", file));
+    const response = await api.put<Refund>(`/refunds/${id}`, formData);
+    return response.data;
+  }
+
   const response = await api.put<Refund>(`/refunds/${id}`, payload);
   return response.data;
 }

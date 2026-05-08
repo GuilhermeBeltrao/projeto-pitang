@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -10,7 +10,7 @@ import { Button } from "../../components/ui/button";
 import { Select } from "../../components/ui/select";
 import { listCategories } from "../../services/categories";
 import { getRefund, updateRefund } from "../../services/refunds";
-import type { Category } from "../../types";
+import type { Attachment, Category } from "../../types";
 import { toast } from "sonner";
 import LoadingState from "../../components/LoadingState";
 
@@ -18,16 +18,7 @@ const schema = z.object({
   categoriaId: z.string().uuid("Categoria obrigatoria"),
   descricao: z.string().min(5, "Descricao obrigatoria"),
   valor: z.coerce.number().positive("Valor deve ser positivo"),
-  dataDespesa: z.string().min(1, "Data obrigatoria"),
-  anexos: z
-    .array(
-      z.object({
-        nomeArquivo: z.string().min(2, "Nome obrigatorio"),
-        urlArquivo: z.string().min(3, "URL obrigatoria"),
-        tipoArquivo: z.string().min(2, "Tipo obrigatorio")
-      })
-    )
-    .optional()
+  dataDespesa: z.string().min(1, "Data obrigatoria")
 });
 
 type FormData = z.infer<typeof schema>;
@@ -39,13 +30,12 @@ export default function EditRefund() {
   const [loading, setLoading] = useState(true);
   const {
     register,
-    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting }
   } = useForm<FormData>({ resolver: zodResolver(schema) });
-
-  const { fields, append, remove } = useFieldArray({ control, name: "anexos" });
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [existingAttachments, setExistingAttachments] = useState<Attachment[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -56,20 +46,27 @@ export default function EditRefund() {
         categoriaId: refund.categoriaId,
         descricao: refund.descricao,
         valor: refund.valor,
-        dataDespesa: refund.dataDespesa.slice(0, 10),
-        anexos: refund.anexos?.map((anexo) => ({
-          nomeArquivo: anexo.nomeArquivo,
-          urlArquivo: anexo.urlArquivo,
-          tipoArquivo: anexo.tipoArquivo
-        }))
+        dataDespesa: refund.dataDespesa.slice(0, 10)
       });
+      setExistingAttachments(refund.anexos ?? []);
       setLoading(false);
     });
   }, [id, reset]);
 
+  const handleFilesChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (!files.length) return;
+    setSelectedFiles((current) => [...current, ...files]);
+    event.target.value = "";
+  };
+
+  const removeSelectedFile = (index: number) => {
+    setSelectedFiles((current) => current.filter((_, currentIndex) => currentIndex !== index));
+  };
+
   const onSubmit = async (data: FormData) => {
     if (!id) return;
-    await updateRefund(id, data);
+    await updateRefund(id, data, selectedFiles);
     toast.success("Solicitacao atualizada");
     navigate("/minhas-solicitacoes");
   };
@@ -117,23 +114,37 @@ export default function EditRefund() {
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Anexos (fake upload)</h3>
-              <Button type="button" variant="subtle" size="sm" onClick={() => append({ nomeArquivo: "", urlArquivo: "", tipoArquivo: "" })}>
-                Adicionar anexo
-              </Button>
+              <h3 className="text-sm font-semibold">Anexos</h3>
+              <span className="text-xs text-slate-500">Selecionar novos arquivos substitui os atuais.</span>
             </div>
-            {fields.map((field, index) => (
-              <div key={field.id} className="grid gap-3 md:grid-cols-3">
-                <Input placeholder="Nome" {...register(`anexos.${index}.nomeArquivo` as const)} />
-                <Input placeholder="URL" {...register(`anexos.${index}.urlArquivo` as const)} />
-                <div className="flex gap-2">
-                  <Input placeholder="Tipo" {...register(`anexos.${index}.tipoArquivo` as const)} />
-                  <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)}>
-                    Remover
-                  </Button>
-                </div>
+            <Input type="file" multiple onChange={handleFilesChange} />
+            {selectedFiles.length ? (
+              <div className="space-y-2">
+                {selectedFiles.map((file, index) => (
+                  <div key={`${file.name}-${index}`} className="flex items-center justify-between rounded border border-slate-200 px-3 py-2">
+                    <div>
+                      <p className="text-sm font-medium">{file.name}</p>
+                      <p className="text-xs text-slate-500">{file.type || "tipo desconhecido"}</p>
+                    </div>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => removeSelectedFile(index)}>
+                      Remover
+                    </Button>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : existingAttachments.length ? (
+              <div className="space-y-2">
+                <p className="text-xs text-slate-500">Arquivos atuais</p>
+                {existingAttachments.map((anexo) => (
+                  <div key={anexo.id ?? `${anexo.nomeArquivo}-${anexo.urlArquivo}`} className="rounded border border-slate-200 px-3 py-2">
+                    <p className="text-sm font-medium">{anexo.nomeArquivo}</p>
+                    <p className="text-xs text-slate-500">{anexo.tipoArquivo}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500">Nenhum arquivo selecionado.</p>
+            )}
           </div>
 
           <Button type="submit" disabled={isSubmitting}>
