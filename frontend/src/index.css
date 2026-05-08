@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
+  color: #0b1220;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  background: radial-gradient(1200px circle at 0% 0%, rgba(14, 165, 164, 0.12), transparent 60%),
+    radial-gradient(900px circle at 90% -10%, rgba(249, 115, 22, 0.12), transparent 55%),
+    #f8fafc;
+  min-height: 100vh;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(15, 118, 110, 0.08), rgba(234, 88, 12, 0.08));
+  pointer-events: none;
+  z-index: -1;
+}
+
+.dark body {
+  color: #f8fafc;
+  background: radial-gradient(900px circle at 10% 0%, rgba(14, 165, 164, 0.14), transparent 60%),
+    radial-gradient(700px circle at 90% 0%, rgba(234, 88, 12, 0.16), transparent 55%),
+    #0b1220;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@layer components {
+  .card-surface {
+    @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
+  }
+
+  .dark .card-surface {
+    @apply border-slate-700 bg-slate-900;
+  }
+}

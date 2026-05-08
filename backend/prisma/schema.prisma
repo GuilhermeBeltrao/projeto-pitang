@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  COLABORADOR
+  GESTOR
+  FINANCEIRO
+  ADMIN
+}
+
+enum RefundStatus {
+  RASCUNHO
+  ENVIADO
+  APROVADO
+  REJEITADO
+  PAGO
+}
+
+enum HistoryAction {
+  CRIAR
+  ATUALIZAR
+  ENVIAR
+  APROVAR
+  REJEITAR
+  PAGAR
+  EXCLUIR
+}
+
+model User {
+  id          String                @id @default(uuid())
+  nome        String
+  email       String                @unique
+  senha       String
+  perfil      UserRole
+  criadoEm    DateTime              @default(now())
+  atualizadoEm DateTime             @updatedAt
+  solicitacoes SolicitacaoReembolso[] @relation("Solicitante")
+  historicos  HistoricoSolicitacao[]
+}
+
+model Categoria {
+  id           String                 @id @default(uuid())
+  nome         String
+  ativo        Boolean                @default(true)
+  criadoEm     DateTime               @default(now())
+  atualizadoEm DateTime               @updatedAt
+  solicitacoes SolicitacaoReembolso[]
+}
+
+model SolicitacaoReembolso {
+  id                   String                 @id @default(uuid())
+  solicitanteId        String
+  categoriaId          String
+  descricao            String
+  valor                Decimal                @db.Decimal(10, 2)
+  dataDespesa          DateTime
+  status               RefundStatus           @default(RASCUNHO)
+  justificativaRejeicao String?
+  criadoEm             DateTime               @default(now())
+  atualizadoEm         DateTime               @updatedAt
+
+  solicitante User      @relation("Solicitante", fields: [solicitanteId], references: [id])
+  categoria    Categoria @relation(fields: [categoriaId], references: [id])
+  anexos       Anexo[]
+  historicos   HistoricoSolicitacao[]
+
+  @@index([solicitanteId])
+  @@index([categoriaId])
+  @@index([status])
+}
+
+model Anexo {
+  id            String               @id @default(uuid())
+  solicitacaoId String
+  nomeArquivo   String
+  urlArquivo    String
+  tipoArquivo   String
+  criadoEm      DateTime             @default(now())
+
+  solicitacao SolicitacaoReembolso @relation(fields: [solicitacaoId], references: [id], onDelete: Cascade)
+
+  @@index([solicitacaoId])
+}
+
+model HistoricoSolicitacao {
+  id            String               @id @default(uuid())
+  solicitacaoId String
+  usuarioId     String
+  acao          HistoryAction
+  observacao    String?
+  criadoEm      DateTime             @default(now())
+
+  solicitacao SolicitacaoReembolso @relation(fields: [solicitacaoId], references: [id], onDelete: Cascade)
+  usuario     User                 @relation(fields: [usuarioId], references: [id])
+
+  @@index([solicitacaoId])
+  @@index([usuarioId])
+}
