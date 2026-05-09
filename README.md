@@ -100,9 +100,67 @@ Frontend:
 
 ## Docker
 
-```
+### Executar com Docker Compose
+
+```bash
+# Construir e iniciar os containers
 docker-compose up --build
+
+# Ou apenas iniciar (se já foram construídos)
+docker-compose up
+
+# Parar os containers
+docker-compose down
+
+# Ver logs
+docker-compose logs -f frontend
+docker-compose logs -f backend
+docker-compose logs -f db
 ```
+
+Após iniciar:
+- **Frontend**: acesse em http://localhost:5173/login
+- **Backend API**: acesse em http://localhost:4000
+- **API Docs (Swagger)**: acesse em http://localhost:4000/docs
+- **Database**: PostgreSQL disponível em localhost:5432
+
+Credenciais de exemplo (seed automático):
+- `colaborador@demo.local` / `Passw0rd!`
+- `gestor@demo.local` / `Passw0rd!`
+- `financeiro@demo.local` / `Passw0rd!`
+- `admin@demo.local` / `Passw0rd!`
+
+### Rebuild após mudanças no código
+
+Se alterar código ou dependências, reconstrua a imagem:
+
+```bash
+# Reconstruir sem cache
+docker-compose build --no-cache
+
+# Reiniciar containers
+docker-compose up -d
+```
+
+## Funcionalidades Principais
+
+### Solicitações de Reembolso
+- Criar, editar e deletar solicitações em rascunho
+- Anexar múltiplos arquivos (upload de arquivo) 
+- Enviar para aprovação
+- Visualizar histórico completo de transições
+
+### Fluxo de Aprovação
+1. Colaborador cria solicitação com descrição, valor, data e anexos
+2. Gestor revisa e aprova ou rejeita (com justificativa)
+3. Financeiro marca como paga
+4. Admin gerencia usuários e categorias
+
+### Upload de Arquivos
+- Suporte a múltiplos arquivos por solicitação
+- Arquivos armazenados em `backend/uploads/`
+- URLs acessíveis via `http://localhost:4000/uploads/<filename>`
+- Validação de tipo e nome de arquivo
 
 ## Observacoes
 
