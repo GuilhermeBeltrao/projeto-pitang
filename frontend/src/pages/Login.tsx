@@ -37,13 +37,13 @@ export default function Login() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <label className="text-sm font-medium">Email</label>
-          <Input type="email" placeholder="seu@email.com" {...register("email")} />
+          <label htmlFor="email" className="text-sm font-medium">Email</label>
+          <Input id="email" type="email" placeholder="seu@email.com" {...register("email")} />
           {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
         </div>
         <div>
-          <label className="text-sm font-medium">Senha</label>
-          <Input type="password" placeholder="********" {...register("senha")} />
+          <label htmlFor="senha" className="text-sm font-medium">Senha</label>
+          <Input id="senha" type="password" placeholder="********" {...register("senha")} />
           {errors.senha && <p className="text-xs text-red-500 mt-1">{errors.senha.message}</p>}
         </div>
         <Button type="submit" className="w-full" disabled={isSubmitting}>
